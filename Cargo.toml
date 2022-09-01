@@ -1,0 +1,42 @@
+[package]
+name = "clockwork"
+version = "0.1.0"
+edition = "2021"
+authors = ["Alexander Weichart <alexanderweichart@icloud.com>"]
+description = "VST plugin, which repeats actively played MIDI notes at variable speed. "
+license = "GPL-3.0-or-later"
+
+[workspace]
+members = ["xtask"]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+# Remove the `assert_process_allocs` feature to allow allocations on the audio
+# thread in debug builds.
+nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", features = ["assert_process_allocs"] }
+# Uncomment the below line to disable the on-by-default VST3 feature to remove
+# the GPL compatibility requirement
+# nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", default_features = false, features = ["assert_process_allocs"] }
+
+
+embedded-time = "0.12.1"
+
+# logging
+log = "0.4"
+simplelog = "0.12.0"
+log-panics = "2"
+dirs = "4.0.0"
+
+# gui
+egui = "0.17"
+egui-baseview = {git = "https://github.com/robbert-vdh/egui-baseview", rev ="afde9c661809ee08d69864caa899246592d93f8c" }
+baseview = { git = "https://github.com/robbert-vdh/baseview.git", branch = "feature/mouse-event-modifiers", features = ["opengl"]  }
+raw-window-handle = "0.4"
+
+# utility
+strum = "0.24"
+strum_macros = "0.24"
+ringbuf = "0.2.8"
+chashmap = "2.2.2"
