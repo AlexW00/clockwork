@@ -14,10 +14,7 @@ The user manual can be found [here]().
 
 ### 💾 Download
 
-Clockwork is available as a VST3 and CLAP plugin:
-
-- [Clockwork.vst3]()
-- [Clockwork.clap]()
+Clockwork is available as a VST3 and CLAP plugin [here](https://github.com/AlexW00/clockwork/releases/latest).
 
 ### 👨‍💻 Development
 

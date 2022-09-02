@@ -5,4 +5,4 @@
 # name = "Human Readable Plugin Name"  # defaults to <package_name>
 
 [clockwork]
-name = "ClockworkPlugin"
+name = "Clockwork"

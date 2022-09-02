@@ -2,10 +2,7 @@
 
 ### Installation
 
-To install Clockwork, download either the VST3 or CLAP plugin:
-
-- [Clockwork.vst3]()
-- [Clockwork.clap]()
+To install Clockwork, download either the VST3 or CLAP plugin frm [here](https://github.com/AlexW00/clockwork/releases/latest).
 
 After downloading, move the plugin to your VST3 or CLAP plugin folder and follow the instructions of your DAW to register it as a plugin.
 
