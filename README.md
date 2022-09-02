@@ -1,6 +1,6 @@
 ## ⏱️ Clockwork
 
-An MIDI note repeater, written in Rust.
+An MIDI note repeater plugin, written in Rust.
 
 ### 🎬 Showcase:
 
