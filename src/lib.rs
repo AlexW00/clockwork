@@ -1,10 +1,17 @@
 mod util;
+mod params;
 
 use std::collections::HashMap;
+use std::env;
 use nih_plug::prelude::*;
 use std::sync::{Arc};
 use std::time::SystemTime;
 use log::{info};
+use crate::params::freq_type::{ FrequencyType };
+use crate::params::trigger_mode::{TriggerMode};
+use strum::{EnumCount, IntoEnumIterator};
+use crate::params::categorical_int_param::CategoricalIntParam;
+use num_traits::FromPrimitive;
 
 // This is a shortened version of the gain example with most comments removed, check out
 // https://github.com/robbert-vdh/nih-plug/blob/master/plugins/examples/gain/src/lib.rs to get
@@ -13,7 +20,7 @@ use log::{info};
 struct ClockworkPlugin {
     params: Arc<ClockworkPluginParams>,
     active_notes: HashMap<u8, NoteEvent>,
-    last_midi_send_timestamp: SystemTime,
+    last_note_on_send: SystemTime,
 }
 
 #[derive(Params)]
@@ -37,7 +44,7 @@ impl Default for ClockworkPlugin {
         Self {
             params: Arc::new(ClockworkPluginParams::default()),
             active_notes: HashMap::new(),
-            last_midi_send_timestamp: SystemTime::UNIX_EPOCH,
+            last_note_on_send: SystemTime::UNIX_EPOCH,
         }
     }
 }
@@ -48,7 +55,7 @@ impl Default for ClockworkPluginParams {
             // HZ Frequency
             freq_hz: FloatParam::new(
                 "Frequency (Hz)",
-                0.1,
+                1.0,
                 FloatRange::Linear {
                     min: 0.0,
                     max: 100.0
@@ -60,57 +67,20 @@ impl Default for ClockworkPluginParams {
             // MS Frequency
             freq_ms: FloatParam::new(
                 "Frequency (ms)",
-                0.1,
+                1000.0,
                 FloatRange::Linear {
                     min: 0.0,
-                    max: 100.0
+                    max: 10000.0
                 },
             )
                 .with_unit(" ms"),
 
             // Frequency Type
-            freq_type: IntParam::new(
-                "Frequency Type",
-                0,
-                IntRange::Linear {
-                    min: 0,
-                    max: 1
-                },
-            ).with_value_to_string(freq_type_formatter()),
-
+            freq_type: FrequencyType::int_param(),
             // Trigger Mode
-            trigger_mode: IntParam::new(
-                "Trigger Mode",
-                0,
-                IntRange::Linear {
-                    min: 0,
-                    max: 2
-                },
-            ).with_value_to_string(trigger_mode_formatter()),
+            trigger_mode: TriggerMode::int_param(),
         }
     }
-}
-
-
-fn freq_type_formatter () -> Arc<dyn Fn(i32) -> String + Send + Sync> {
-    Arc::new(move |value| {
-        match value {
-            0 => "Hz".to_string(),
-            1 => "Ms".to_string(),
-            _ => "Unknown".to_string(),
-        }
-    })
-}
-
-fn trigger_mode_formatter () -> Arc<dyn Fn(i32) -> String + Send + Sync> {
-    Arc::new(move |value| {
-        match value {
-            0 => "Continue".to_string(),
-            1 => "Re-trigger".to_string(),
-            2 => "Re-trigger delayed".to_string(),
-            _ => "Unknown".to_string(),
-        }
-    })
 }
 
 impl Plugin for ClockworkPlugin {
@@ -147,9 +117,8 @@ impl Plugin for ClockworkPlugin {
         _buffer_config: &BufferConfig,
         _context: &mut impl InitContext,
     ) -> bool {
-        // TODO: Change version here
-        util::logger::init(ClockworkPlugin::NAME.to_string(), 1);
-        info!("ClockworkPlugin initialized");
+        //util::logger::init(ClockworkPlugin::NAME.to_string(), ClockworkPlugin::VERSION.to_string());
+        nih_log!("ClockworkPlugin initialized");
         true
     }
 
@@ -159,7 +128,6 @@ impl Plugin for ClockworkPlugin {
         _aux: &mut AuxiliaryBuffers,
         context: &mut impl ProcessContext,
     ) -> ProcessStatus {
-        //info!("Processing");
         while let Some(event) = context.next_event() {
             match event {
                 NoteEvent::NoteOn { .. } => self.on_note_on(event),
@@ -167,7 +135,6 @@ impl Plugin for ClockworkPlugin {
                 _ => (),
             }
         }
-        //info!("done reading events");
         self.on_midi_send_opportunity(context);
         ProcessStatus::Normal
     }
@@ -175,22 +142,20 @@ impl Plugin for ClockworkPlugin {
 
 impl ClockworkPlugin {
 
-    fn on_note_on (&mut self, note_event: NoteEvent) {
-        match self.params.trigger_mode.value {
-            // Re-trigger
-            1 => {
-                self.last_midi_send_timestamp = SystemTime::UNIX_EPOCH;
-            }
-            // Re-trigger delayed
-            2 => {
-                self.last_midi_send_timestamp = SystemTime::now();
-            }
-            _ => (),
+fn on_note_on (&mut self, note_event: NoteEvent) {
+    match TriggerMode::from_i32(self.params.trigger_mode.value) {
+        Some(TriggerMode::ReTrigger) => {
+            self.last_note_on_send = SystemTime::UNIX_EPOCH;
         }
-        if let NoteEvent::NoteOn {note, ..} = note_event {
-            self.active_notes.insert(note, note_event);
+        Some(TriggerMode::ReTriggerDelayed) => {
+            self.last_note_on_send = SystemTime::now();
         }
+        _ => (),
     }
+    if let NoteEvent::NoteOn {note, ..} = note_event {
+        self.active_notes.insert(note, note_event);
+    }
+}
 
     fn on_note_off (&mut self, note_event: NoteEvent) {
         if let NoteEvent::NoteOff {note, ..} = note_event {
@@ -208,9 +173,11 @@ impl ClockworkPlugin {
 
     fn send_midi (&mut self, context: &mut impl ProcessContext) {
         let mut note_events_to_remove = Vec::<u8>::new();
+        let mut did_send_note_on = false;
         for note_event in self.active_notes.values() {
             if let NoteEvent::NoteOn { .. } = note_event {
                 context.send_event(note_event.clone());
+                did_send_note_on = true;
             }
             if let NoteEvent::NoteOff { note, .. } = note_event {
                 context.send_event(note_event.clone());
@@ -220,12 +187,14 @@ impl ClockworkPlugin {
         for note in note_events_to_remove {
             self.active_notes.remove(&note);
         }
+
+        if did_send_note_on {self.last_note_on_send = SystemTime::now()};
     }
 
     fn do_send_midi (&self) -> bool {
-        match self.params.freq_type.value {
-            0 => self.ms_since_last_midi_send() as f32 > self.params.freq_ms.value,
-            1 => {
+        match FrequencyType::from_i32(self.params.freq_type.value) {
+            Some(FrequencyType::Milliseconds) => self.ms_since_last_midi_send() as f32 > self.params.freq_ms.value,
+            Some(FrequencyType::Hertz)  => {
                 let ms = 1000.0 / self.params.freq_hz.value;
                 self.ms_since_last_midi_send() as f32 > ms
             }
@@ -235,7 +204,7 @@ impl ClockworkPlugin {
 
     fn ms_since_last_midi_send(&self) -> u64 {
         let now = SystemTime::now();
-        let dur = now.duration_since(self.last_midi_send_timestamp);
+        let dur = now.duration_since(self.last_note_on_send);
         if let Ok(dur) = dur {
             dur.as_millis() as u64
         } else {

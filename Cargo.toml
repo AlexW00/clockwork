@@ -15,7 +15,7 @@ crate-type = ["cdylib"]
 [dependencies]
 # Remove the `assert_process_allocs` feature to allow allocations on the audio
 # thread in debug builds.
-nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", features = ["assert_process_allocs"] }
+nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git" }
 # Uncomment the below line to disable the on-by-default VST3 feature to remove
 # the GPL compatibility requirement
 # nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git", default_features = false, features = ["assert_process_allocs"] }
@@ -39,4 +39,5 @@ raw-window-handle = "0.4"
 strum = "0.24"
 strum_macros = "0.24"
 ringbuf = "0.2.8"
-chashmap = "2.2.2"
+num-derive = "0.3"
+num-traits = "0.2"
