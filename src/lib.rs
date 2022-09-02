@@ -93,12 +93,12 @@ impl Default for PluginParams {
 }
 
 impl Plugin for Clockwork {
-    const NAME: &'static str = "ClockworkPlugin";
+    const NAME: &'static str = "Clockwork";
     const VENDOR: &'static str = "Alexander Weichart";
     const URL: &'static str = "https://github.com/AlexW00/clockwork";
     const EMAIL: &'static str = "alexanderweichart@icloud.com";
 
-    const VERSION: &'static str = "0.0.1";
+    const VERSION: &'static str = "1.0.0";
 
     const DEFAULT_INPUT_CHANNELS: u32 = 0;
     const DEFAULT_OUTPUT_CHANNELS: u32 = 0;
