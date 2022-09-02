@@ -2,7 +2,7 @@ use std::sync::{Arc};
 use std::sync::atomic::AtomicBool;
 use nih_plug::context::ParamSetter;
 use nih_plug_egui::{egui, widgets};
-use nih_plug_egui::egui::{Context, DragValue, popup_below_widget, Rect, Response, Rounding, Slider, Ui, Vec2, Widget};
+use nih_plug_egui::egui::{Context, DragValue, popup_below_widget, Response, Rounding, Slider, Ui, Vec2, Widget};
 use nih_plug_egui::egui::style::Margin;
 use crate::{CategoricalIntParam, Clockwork, FrequencyType, PluginParams, TriggerMode};
 use crate::editor::numpad::Numpad;

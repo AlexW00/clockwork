@@ -23,12 +23,6 @@ nih_plug = { git = "https://github.com/robbert-vdh/nih-plug.git" }
 
 embedded-time = "0.12.1"
 
-# logging
-log = "0.4"
-simplelog = "0.12.0"
-log-panics = "2"
-dirs = "4.0.0"
-
 # gui
 nih_plug_egui = { git = "https://github.com/robbert-vdh/nih-plug.git" }
 

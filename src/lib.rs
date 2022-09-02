@@ -1,4 +1,3 @@
-mod util;
 mod params;
 mod editor;
 
@@ -10,7 +9,6 @@ use std::time::SystemTime;
 use nih_plug_egui::{create_egui_editor, EguiState};
 use crate::params::freq_type::{ FrequencyType };
 use crate::params::trigger_mode::{TriggerMode};
-use strum::{IntoEnumIterator};
 use crate::params::categorical_int_param::CategoricalIntParam;
 use num_traits::FromPrimitive;
 use crate::editor::gui::{ GuiEditor };
