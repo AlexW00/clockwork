@@ -233,10 +233,9 @@ fn on_note_on (&mut self, note_event: NoteEvent) {
     }
 }
 
-// TODO: Configure this
 impl ClapPlugin for Clockwork {
     const CLAP_ID: &'static str = "com.alexanderweichart.clockwork";
-    const CLAP_DESCRIPTION: Option<&'static str> = Some("VST plugin, which repeats actively played MIDI notes at variable speed. ");
+    const CLAP_DESCRIPTION: Option<&'static str> = Some("Simple MIDI note repeater.");
     const CLAP_MANUAL_URL: Option<&'static str> = Some(Self::URL);
     const CLAP_SUPPORT_URL: Option<&'static str> = Some(Self::URL);
 

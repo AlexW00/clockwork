@@ -3,7 +3,7 @@ name = "clockwork"
 version = "0.1.0"
 edition = "2021"
 authors = ["Alexander Weichart <alexanderweichart@icloud.com>"]
-description = "VST plugin, which repeats actively played MIDI notes at variable speed. "
+description = "Simple MIDI note repeater."
 license = "GPL-3.0-or-later"
 
 [workspace]
@@ -29,6 +29,5 @@ nih_plug_egui = { git = "https://github.com/robbert-vdh/nih-plug.git" }
 # utility
 strum = "0.24"
 strum_macros = "0.24"
-ringbuf = "0.2.8"
 num-derive = "0.3"
 num-traits = "0.2"
