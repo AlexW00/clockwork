@@ -23,6 +23,15 @@ impl Display for TriggerMode {
     }
 }
 
+impl TriggerMode {
+    pub fn description(&self) -> &'static str {
+        match self {
+            TriggerMode::Continue => "MIDI notes have no effect on the repetition loop",
+            TriggerMode::ReTrigger => "MIDI notes re-trigger the repetition loop",
+            TriggerMode::ReTriggerDelayed => "MIDI notes re-trigger the repetition loop with an initial delay ( = frequency)",
+        }
+    }
+}
 
 impl CategoricalIntParam<TriggerMode> for TriggerMode {
     fn title() -> String {

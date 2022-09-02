@@ -30,10 +30,7 @@ log-panics = "2"
 dirs = "4.0.0"
 
 # gui
-egui = "0.17"
-egui-baseview = {git = "https://github.com/robbert-vdh/egui-baseview", rev ="afde9c661809ee08d69864caa899246592d93f8c" }
-baseview = { git = "https://github.com/robbert-vdh/baseview.git", branch = "feature/mouse-event-modifiers", features = ["opengl"]  }
-raw-window-handle = "0.4"
+nih_plug_egui = { git = "https://github.com/robbert-vdh/nih-plug.git" }
 
 # utility
 strum = "0.24"

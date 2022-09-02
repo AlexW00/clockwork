@@ -1,30 +1,34 @@
 mod util;
 mod params;
+mod editor;
 
 use std::collections::HashMap;
-use std::env;
 use nih_plug::prelude::*;
 use std::sync::{Arc};
+use std::sync::atomic::AtomicBool;
 use std::time::SystemTime;
-use log::{info};
+use nih_plug_egui::{create_egui_editor, EguiState};
 use crate::params::freq_type::{ FrequencyType };
 use crate::params::trigger_mode::{TriggerMode};
-use strum::{EnumCount, IntoEnumIterator};
+use strum::{IntoEnumIterator};
 use crate::params::categorical_int_param::CategoricalIntParam;
 use num_traits::FromPrimitive;
+use crate::editor::gui::{ GuiEditor };
 
 // This is a shortened version of the gain example with most comments removed, check out
 // https://github.com/robbert-vdh/nih-plug/blob/master/plugins/examples/gain/src/lib.rs to get
 // started
 
-struct ClockworkPlugin {
-    params: Arc<ClockworkPluginParams>,
+struct Clockwork {
+    params: Arc<PluginParams>,
     active_notes: HashMap<u8, NoteEvent>,
     last_note_on_send: SystemTime,
+
+    is_typing: Arc<AtomicBool>,
 }
 
 #[derive(Params)]
-struct ClockworkPluginParams {
+pub struct PluginParams {
     /// The parameter's ID is used to identify the parameter in the wrappred plugin API. As long as
     /// these IDs remain constant, you can rename and reorder these fields as you wish. The
     /// parameters are exposed to the host in the same order they were defined. In this case, this
@@ -37,21 +41,28 @@ struct ClockworkPluginParams {
     pub freq_type: IntParam,
     #[id = "trigger-mode"]
     pub trigger_mode: IntParam,
+
+    #[persist = "editor-state"]
+    editor_state: Arc<EguiState>,
 }
 
-impl Default for ClockworkPlugin {
+impl Default for Clockwork {
     fn default() -> Self {
         Self {
-            params: Arc::new(ClockworkPluginParams::default()),
+            params: Arc::new(PluginParams::default()),
             active_notes: HashMap::new(),
             last_note_on_send: SystemTime::UNIX_EPOCH,
+            is_typing: Arc::new(AtomicBool::new(false)),
         }
     }
 }
 
-impl Default for ClockworkPluginParams {
+impl Default for PluginParams {
+
     fn default() -> Self {
         Self {
+            editor_state: EguiState::from_size(Clockwork::WINDOW_WIDTH, Clockwork::WINDOW_HEIGHT),
+
             // HZ Frequency
             freq_hz: FloatParam::new(
                 "Frequency (Hz)",
@@ -76,14 +87,14 @@ impl Default for ClockworkPluginParams {
                 .with_unit(" ms"),
 
             // Frequency Type
-            freq_type: FrequencyType::int_param(),
+            freq_type: FrequencyType::new_int_param(),
             // Trigger Mode
-            trigger_mode: TriggerMode::int_param(),
+            trigger_mode: TriggerMode::new_int_param(),
         }
     }
 }
 
-impl Plugin for ClockworkPlugin {
+impl Plugin for Clockwork {
     const NAME: &'static str = "ClockworkPlugin";
     const VENDOR: &'static str = "Alexander Weichart";
     const URL: &'static str = "https://github.com/AlexW00/clockwork";
@@ -106,6 +117,18 @@ impl Plugin for ClockworkPlugin {
         self.params.clone()
     }
 
+    fn editor(&self) -> Option<Box<dyn Editor>> {
+        let params = self.params.clone();
+        let is_typing = self.is_typing.clone();
+        create_egui_editor(
+            self.params.editor_state.clone(),
+            (),
+            move |egui_ctx, setter, _state| {
+                Clockwork::draw_ui(egui_ctx, setter, &params, &is_typing);
+            }
+        )
+    }
+
     fn accepts_bus_config(&self, config: &BusConfig) -> bool {
         // This works with any symmetrical IO layout
         config.num_input_channels == config.num_output_channels && config.num_input_channels > 0
@@ -117,7 +140,6 @@ impl Plugin for ClockworkPlugin {
         _buffer_config: &BufferConfig,
         _context: &mut impl InitContext,
     ) -> bool {
-        //util::logger::init(ClockworkPlugin::NAME.to_string(), ClockworkPlugin::VERSION.to_string());
         nih_log!("ClockworkPlugin initialized");
         true
     }
@@ -140,7 +162,7 @@ impl Plugin for ClockworkPlugin {
     }
 }
 
-impl ClockworkPlugin {
+impl Clockwork {
 
 fn on_note_on (&mut self, note_event: NoteEvent) {
     match TriggerMode::from_i32(self.params.trigger_mode.value) {
@@ -214,23 +236,23 @@ fn on_note_on (&mut self, note_event: NoteEvent) {
 }
 
 // TODO: Configure this
-impl ClapPlugin for ClockworkPlugin {
-    const CLAP_ID: &'static str = "com.your-domain.clockwork";
+impl ClapPlugin for Clockwork {
+    const CLAP_ID: &'static str = "com.alexanderweichart.clockwork";
     const CLAP_DESCRIPTION: Option<&'static str> = Some("VST plugin, which repeats actively played MIDI notes at variable speed. ");
     const CLAP_MANUAL_URL: Option<&'static str> = Some(Self::URL);
-    const CLAP_SUPPORT_URL: Option<&'static str> = None;
+    const CLAP_SUPPORT_URL: Option<&'static str> = Some(Self::URL);
 
     // Don't forget to change these features
-    const CLAP_FEATURES: &'static [ClapFeature] = &[ClapFeature::AudioEffect, ClapFeature::Stereo];
+    const CLAP_FEATURES: &'static [ClapFeature] = &[ClapFeature::NoteEffect, ClapFeature::Utility];
 }
 
-impl Vst3Plugin for ClockworkPlugin {
-    const VST3_CLASS_ID: [u8; 16] = *b"Exactly16Chars!!";
+impl Vst3Plugin for Clockwork {
+    const VST3_CLASS_ID: [u8; 16] = *b"Cl0ckw0rkPlug1nX";
 
     // And don't forget to change these categories, see the docstring on `VST3_CATEGORIES` for more
     // information
     const VST3_CATEGORIES: &'static str = "Instrument|Tools";
 }
 
-nih_export_clap!(ClockworkPlugin);
-nih_export_vst3!(ClockworkPlugin);
+nih_export_clap!(Clockwork);
+nih_export_vst3!(Clockwork);
