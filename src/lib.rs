@@ -92,7 +92,7 @@ impl Default for PluginParams {
                 175.0,
                 FloatRange::Linear {
                     min: 0.0,
-                    max: 10000.0
+                    max: 1000.0
                 },
             )
                 .with_unit(" bpm"),
