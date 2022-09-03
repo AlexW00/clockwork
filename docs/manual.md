@@ -29,6 +29,7 @@ Here's an example for Cthulhu, which is also a MIDI effect plugin:
 - This button controls the type of the frequency.
   - `Hz` means, that the frequency is measured in Hertz.
   - `ms` means, that the frequency is measured in milliseconds.
+  - `bpm` means, that the frequency is measured in beats per minute.
 
 ##### Trigger Type
 
