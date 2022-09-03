@@ -12,6 +12,7 @@ pub enum FrequencyType {
     Hertz,
     #[default]
     Milliseconds,
+    Bpm
 }
 
 impl Display for FrequencyType {
@@ -19,6 +20,7 @@ impl Display for FrequencyType {
         match self {
             FrequencyType::Hertz => write!(f, "Hz"),
             FrequencyType::Milliseconds => write!(f, "ms"),
+            FrequencyType::Bpm => write!(f, "bpm"),
         }
     }
 }

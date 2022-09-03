@@ -31,6 +31,7 @@ impl GuiEditor for Clockwork {
                 let freq_param = match freq_type {
                     FrequencyType::Hertz => &params.freq_hz,
                     FrequencyType::Milliseconds => &params.freq_ms,
+                    FrequencyType::Bpm => &params.freq_bpm,
                 };
                 let trigger_mode = TriggerMode::from_int_param(&params.trigger_mode);
 
@@ -105,8 +106,11 @@ impl GuiEditor for Clockwork {
                                         setter.set_parameter(&params.freq_type, FrequencyType::Milliseconds as i32);
                                       },
                                       FrequencyType::Milliseconds => {
-                                        setter.set_parameter(&params.freq_type, FrequencyType::Hertz as i32);
-                                      }
+                                        setter.set_parameter(&params.freq_type, FrequencyType::Bpm as i32);
+                                      },
+                                        FrequencyType::Bpm => {
+                                            setter.set_parameter(&params.freq_type, FrequencyType::Hertz as i32);
+                                        }
                                }
                             }
                         });

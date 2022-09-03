@@ -35,6 +35,8 @@ pub struct PluginParams {
     pub freq_hz: FloatParam,
     #[id = "freq-ms"]
     pub freq_ms: FloatParam,
+    #[id = "freq-bpm"]
+    pub freq_bpm: FloatParam,
     #[id = "freq-type"]
     pub freq_type: IntParam,
     #[id = "trigger-mode"]
@@ -83,6 +85,17 @@ impl Default for PluginParams {
                 },
             )
                 .with_unit(" ms"),
+
+            // BPM Frequency
+            freq_bpm: FloatParam::new(
+                "Frequency (bpm)",
+                175.0,
+                FloatRange::Linear {
+                    min: 0.0,
+                    max: 10000.0
+                },
+            )
+                .with_unit(" bpm"),
 
             // Frequency Type
             freq_type: FrequencyType::new_int_param(),
@@ -218,7 +231,11 @@ fn on_note_on (&mut self, note_event: NoteEvent) {
                 let ms = 1000.0 / self.params.freq_hz.value;
                 self.ms_since_last_midi_send() as f32 > ms
             }
-            _ => false,
+            Some(FrequencyType::Bpm) => {
+                let ms = 60000.0 / self.params.freq_bpm.value;
+                self.ms_since_last_midi_send() as f32 > ms
+            }
+            _ => false
         }
     }
 
