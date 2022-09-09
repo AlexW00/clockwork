@@ -25,9 +25,3 @@ embedded-time = "0.12.1"
 
 # gui
 nih_plug_egui = { git = "https://github.com/robbert-vdh/nih-plug.git" }
-
-# utility
-strum = "0.24"
-strum_macros = "0.24"
-num-derive = "0.3"
-num-traits = "0.2"

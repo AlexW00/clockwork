@@ -1,32 +1,11 @@
-use std::borrow::Cow;
-use num_derive::FromPrimitive;
-use num_derive::ToPrimitive;
-use strum_macros::{EnumCount, EnumIter};
-use strum::{EnumCount, IntoEnumIterator};
+use nih_plug::prelude::Enum;
 
-use std::fmt::Display;
-use crate::CategoricalIntParam;
-
-#[derive(FromPrimitive, ToPrimitive, Clone, Copy, EnumCount, EnumIter, Default)]
+#[derive(PartialEq, Enum, Clone)]
 pub enum FrequencyType {
+    #[name="Hz"]
     Hertz,
-    #[default]
+    #[name="ms"]
     Milliseconds,
+    #[name="bpm"]
     Bpm
-}
-
-impl Display for FrequencyType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            FrequencyType::Hertz => write!(f, "Hz"),
-            FrequencyType::Milliseconds => write!(f, "ms"),
-            FrequencyType::Bpm => write!(f, "bpm"),
-        }
-    }
-}
-
-impl CategoricalIntParam<FrequencyType> for FrequencyType {
-    fn title() -> String {
-        "Frequency type".to_string()
-    }
 }

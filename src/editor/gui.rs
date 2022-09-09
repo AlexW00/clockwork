@@ -1,10 +1,14 @@
-use std::sync::{Arc};
+use std::sync::Arc;
 use std::sync::atomic::AtomicBool;
+
 use nih_plug::context::ParamSetter;
+use nih_plug::param::Param;
+use nih_plug::prelude::Enum;
 use nih_plug_egui::{egui, widgets};
-use nih_plug_egui::egui::{Context, DragValue, popup_below_widget, Response, Rounding, Slider, Ui, Vec2, Widget};
+use nih_plug_egui::egui::{Context, DragValue, popup_below_widget, Vec2};
 use nih_plug_egui::egui::style::Margin;
-use crate::{CategoricalIntParam, Clockwork, FrequencyType, PluginParams, TriggerMode};
+
+use crate::{Clockwork, FrequencyType, PluginParams, TriggerMode};
 use crate::editor::numpad::Numpad;
 
 pub trait GuiEditor {
@@ -17,7 +21,6 @@ pub trait GuiEditor {
         params: &Arc<PluginParams>,
         is_typing: &Arc<AtomicBool>,
     );
-
 }
 
 impl GuiEditor for Clockwork {
@@ -27,13 +30,13 @@ impl GuiEditor for Clockwork {
     fn draw_ui(ctx: &Context, setter: &ParamSetter, params: &Arc<PluginParams>, is_typing: &Arc<AtomicBool>) {
         egui::CentralPanel::default()
             .show(ctx, |ui| {
-                let freq_type = FrequencyType::from_int_param(&params.freq_type);
+                let freq_type = params.freq_type.value();
                 let freq_param = match freq_type {
                     FrequencyType::Hertz => &params.freq_hz,
                     FrequencyType::Milliseconds => &params.freq_ms,
                     FrequencyType::Bpm => &params.freq_bpm,
                 };
-                let trigger_mode = TriggerMode::from_int_param(&params.trigger_mode);
+                let trigger_mode = params.trigger_mode.value();
 
                 ui.style_mut().spacing.window_margin = Margin::from(Vec2::from([
                     Clockwork::WINDOW_HEIGHT as f32 * 0.05,
@@ -46,7 +49,7 @@ impl GuiEditor for Clockwork {
                         ui.horizontal(|ui| {
                             ui.add(widgets::ParamSlider::for_param(
                                 freq_param,
-                                setter
+                                setter,
                             )
                                 .without_value()
                                 .with_width(Clockwork::WINDOW_WIDTH as f32 * 0.8)
@@ -63,12 +66,12 @@ impl GuiEditor for Clockwork {
                                 ) {
                                     is_typing.store(
                                         false,
-                                        std::sync::atomic::Ordering::Relaxed
+                                        std::sync::atomic::Ordering::Relaxed,
                                     );
                                 } else {
                                     is_typing.store(
                                         true,
-                                        std::sync::atomic::Ordering::Relaxed
+                                        std::sync::atomic::Ordering::Relaxed,
                                     );
                                 }
                             }
@@ -85,7 +88,7 @@ impl GuiEditor for Clockwork {
                                 &dragval_widget,
                                 |ui| {
                                     ui.add(numpad);
-                                }
+                                },
                             );
 
                             if is_typing.load(
@@ -96,22 +99,16 @@ impl GuiEditor for Clockwork {
                             };
 
                             // Toggle for frequency type
-
+                            let text = FrequencyType::variants()[freq_type.clone().to_index()];
                             if ui
-                                .add(egui::Button::new(freq_type.to_string()))
+                                .add(egui::Button::new(text))
                                 .clicked()
                             {
-                               match freq_type {
-                                      FrequencyType::Hertz => {
-                                        setter.set_parameter(&params.freq_type, FrequencyType::Milliseconds as i32);
-                                      },
-                                      FrequencyType::Milliseconds => {
-                                        setter.set_parameter(&params.freq_type, FrequencyType::Bpm as i32);
-                                      },
-                                        FrequencyType::Bpm => {
-                                            setter.set_parameter(&params.freq_type, FrequencyType::Hertz as i32);
-                                        }
-                               }
+                                if freq_type.clone().to_index() == FrequencyType::variants().len() - 1 {
+                                    setter.set_parameter(&params.freq_type, FrequencyType::from_index(0));
+                                } else {
+                                    setter.set_parameter(&params.freq_type, params.freq_type.next_step(freq_type.clone()))
+                                }
                             }
                         });
                     });
@@ -120,22 +117,17 @@ impl GuiEditor for Clockwork {
                     ui.separator();
                     ui.horizontal(
                         |ui| {
+                            let text = TriggerMode::variants()[trigger_mode.clone().to_index()];
                             if ui
                                 .add(egui::Button::new(
-                                    trigger_mode.to_string()
+                                    text
                                 ))
                                 .clicked()
                             {
-                                match trigger_mode {
-                                    TriggerMode::Continue => {
-                                        setter.set_parameter(&params.trigger_mode, TriggerMode::ReTrigger as i32);
-                                    },
-                                    TriggerMode::ReTrigger => {
-                                        setter.set_parameter(&params.trigger_mode, TriggerMode::ReTriggerDelayed as i32);
-                                    },
-                                    TriggerMode::ReTriggerDelayed => {
-                                        setter.set_parameter(&params.trigger_mode, TriggerMode::Continue as i32);
-                                    }
+                                if trigger_mode.clone().to_index() == TriggerMode::variants().len() - 1 {
+                                    setter.set_parameter(&params.trigger_mode, TriggerMode::from_index(0));
+                                } else {
+                                    setter.set_parameter(&params.trigger_mode, params.trigger_mode.next_step(trigger_mode.clone()));
                                 }
                             }
                             let label = egui::Label::new(trigger_mode.description()).wrap(true);
@@ -145,6 +137,5 @@ impl GuiEditor for Clockwork {
                 })
             });
     }
-
 }
 

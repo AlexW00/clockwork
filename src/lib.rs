@@ -9,8 +9,6 @@ use std::time::SystemTime;
 use nih_plug_egui::{create_egui_editor, EguiState};
 use crate::params::freq_type::{ FrequencyType };
 use crate::params::trigger_mode::{TriggerMode};
-use crate::params::categorical_int_param::CategoricalIntParam;
-use num_traits::FromPrimitive;
 use crate::editor::gui::{ GuiEditor };
 
 // This is a shortened version of the gain example with most comments removed, check out
@@ -38,9 +36,9 @@ pub struct PluginParams {
     #[id = "freq-bpm"]
     pub freq_bpm: FloatParam,
     #[id = "freq-type"]
-    pub freq_type: IntParam,
+    pub freq_type: EnumParam<FrequencyType>,
     #[id = "trigger-mode"]
-    pub trigger_mode: IntParam,
+    pub trigger_mode: EnumParam<TriggerMode>,
 
     #[persist = "editor-state"]
     editor_state: Arc<EguiState>,
@@ -98,9 +96,15 @@ impl Default for PluginParams {
                 .with_unit(" bpm"),
 
             // Frequency Type
-            freq_type: FrequencyType::new_int_param(),
+            freq_type: EnumParam::new(
+                "Frequency Type",
+                FrequencyType::Hertz,
+            ),
             // Trigger Mode
-            trigger_mode: TriggerMode::new_int_param(),
+            trigger_mode: EnumParam::new(
+                "Trigger Mode",
+                TriggerMode::Continue,
+            ),
         }
     }
 }
@@ -111,7 +115,7 @@ impl Plugin for Clockwork {
     const URL: &'static str = "https://github.com/AlexW00/clockwork";
     const EMAIL: &'static str = "alexanderweichart@icloud.com";
 
-    const VERSION: &'static str = "1.0.0";
+    const VERSION: &'static str = "1.0.2";
 
     const DEFAULT_INPUT_CHANNELS: u32 = 0;
     const DEFAULT_OUTPUT_CHANNELS: u32 = 0;
@@ -176,11 +180,11 @@ impl Plugin for Clockwork {
 impl Clockwork {
 
 fn on_note_on (&mut self, note_event: NoteEvent) {
-    match TriggerMode::from_i32(self.params.trigger_mode.value) {
-        Some(TriggerMode::ReTrigger) => {
+    match self.params.trigger_mode.value() {
+        TriggerMode::ReTrigger => {
             self.last_note_on_send = SystemTime::UNIX_EPOCH;
         }
-        Some(TriggerMode::ReTriggerDelayed) => {
+        TriggerMode::ReTriggerDelayed=> {
             self.last_note_on_send = SystemTime::now();
         }
         _ => (),
@@ -225,17 +229,16 @@ fn on_note_on (&mut self, note_event: NoteEvent) {
     }
 
     fn do_send_midi (&self) -> bool {
-        match FrequencyType::from_i32(self.params.freq_type.value) {
-            Some(FrequencyType::Milliseconds) => self.ms_since_last_midi_send() as f32 > self.params.freq_ms.value,
-            Some(FrequencyType::Hertz)  => {
+        match self.params.freq_type.value() {
+            FrequencyType::Milliseconds => self.ms_since_last_midi_send() as f32 > self.params.freq_ms.value,
+            FrequencyType::Hertz  => {
                 let ms = 1000.0 / self.params.freq_hz.value;
                 self.ms_since_last_midi_send() as f32 > ms
             }
-            Some(FrequencyType::Bpm) => {
+            FrequencyType::Bpm => {
                 let ms = 60000.0 / self.params.freq_bpm.value;
                 self.ms_since_last_midi_send() as f32 > ms
             }
-            _ => false
         }
     }
 
