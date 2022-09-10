@@ -8,7 +8,7 @@ use nih_plug_egui::{egui, widgets};
 use nih_plug_egui::egui::{Context, DragValue, popup_below_widget, Vec2};
 use nih_plug_egui::egui::style::Margin;
 
-use crate::{Clockwork, FrequencyType, PluginParams, TriggerMode};
+use crate::{TinyArp, FrequencyType, PluginParams, TriggerMode};
 use crate::editor::numpad::Numpad;
 
 pub trait GuiEditor {
@@ -23,7 +23,7 @@ pub trait GuiEditor {
     );
 }
 
-impl GuiEditor for Clockwork {
+impl GuiEditor for TinyArp {
     const WINDOW_WIDTH: u32 = 600;
     const WINDOW_HEIGHT: u32 = 200;
 
@@ -39,8 +39,8 @@ impl GuiEditor for Clockwork {
                 let trigger_mode = params.trigger_mode.value();
 
                 ui.style_mut().spacing.window_margin = Margin::from(Vec2::from([
-                    Clockwork::WINDOW_HEIGHT as f32 * 0.05,
-                    Clockwork::WINDOW_HEIGHT as f32 * 0.05,
+                    TinyArp::WINDOW_HEIGHT as f32 * 0.05,
+                    TinyArp::WINDOW_HEIGHT as f32 * 0.05,
                 ]));
                 ui.vertical(|ui| {
                     ui.heading("Frequency:");
@@ -52,7 +52,7 @@ impl GuiEditor for Clockwork {
                                 setter,
                             )
                                 .without_value()
-                                .with_width(Clockwork::WINDOW_WIDTH as f32 * 0.8)
+                                .with_width(TinyArp::WINDOW_WIDTH as f32 * 0.8)
                             );
 
                             let mut draval_val = freq_param.value.clone();

@@ -11,11 +11,7 @@ use crate::params::freq_type::{ FrequencyType };
 use crate::params::trigger_mode::{TriggerMode};
 use crate::editor::gui::{ GuiEditor };
 
-// This is a shortened version of the gain example with most comments removed, check out
-// https://github.com/robbert-vdh/nih-plug/blob/master/plugins/examples/gain/src/lib.rs to get
-// started
-
-struct Clockwork {
+struct TinyArp {
     params: Arc<PluginParams>,
     active_notes: HashMap<u8, NoteEvent>,
     last_note_on_send: SystemTime,
@@ -25,10 +21,6 @@ struct Clockwork {
 
 #[derive(Params)]
 pub struct PluginParams {
-    /// The parameter's ID is used to identify the parameter in the wrappred plugin API. As long as
-    /// these IDs remain constant, you can rename and reorder these fields as you wish. The
-    /// parameters are exposed to the host in the same order they were defined. In this case, this
-    /// gain parameter is stored as linear gain while the values are displayed in decibels.
     #[id = "freq-hz"]
     pub freq_hz: FloatParam,
     #[id = "freq-ms"]
@@ -44,7 +36,7 @@ pub struct PluginParams {
     editor_state: Arc<EguiState>,
 }
 
-impl Default for Clockwork {
+impl Default for TinyArp {
     fn default() -> Self {
         Self {
             params: Arc::new(PluginParams::default()),
@@ -56,10 +48,9 @@ impl Default for Clockwork {
 }
 
 impl Default for PluginParams {
-
     fn default() -> Self {
         Self {
-            editor_state: EguiState::from_size(Clockwork::WINDOW_WIDTH, Clockwork::WINDOW_HEIGHT),
+            editor_state: EguiState::from_size(TinyArp::WINDOW_WIDTH, TinyArp::WINDOW_HEIGHT),
 
             // HZ Frequency
             freq_hz: FloatParam::new(
@@ -109,13 +100,13 @@ impl Default for PluginParams {
     }
 }
 
-impl Plugin for Clockwork {
-    const NAME: &'static str = "Clockwork";
+impl Plugin for TinyArp {
+    const NAME: &'static str = "TinyArp";
     const VENDOR: &'static str = "Alexander Weichart";
-    const URL: &'static str = "https://github.com/AlexW00/clockwork";
+    const URL: &'static str = "https://github.com/AlexW00/tinyarp";
     const EMAIL: &'static str = "alexanderweichart@icloud.com";
 
-    const VERSION: &'static str = "1.0.2";
+    const VERSION: &'static str = "1.1.0";
 
     const DEFAULT_INPUT_CHANNELS: u32 = 0;
     const DEFAULT_OUTPUT_CHANNELS: u32 = 0;
@@ -139,7 +130,7 @@ impl Plugin for Clockwork {
             self.params.editor_state.clone(),
             (),
             move |egui_ctx, setter, _state| {
-                Clockwork::draw_ui(egui_ctx, setter, &params, &is_typing);
+                TinyArp::draw_ui(egui_ctx, setter, &params, &is_typing);
             }
         )
     }
@@ -155,7 +146,7 @@ impl Plugin for Clockwork {
         _buffer_config: &BufferConfig,
         _context: &mut impl InitContext,
     ) -> bool {
-        nih_log!("ClockworkPlugin initialized");
+        nih_log!("TinyArp initialized");
         true
     }
 
@@ -177,7 +168,7 @@ impl Plugin for Clockwork {
     }
 }
 
-impl Clockwork {
+impl TinyArp {
 
 fn on_note_on (&mut self, note_event: NoteEvent) {
     match self.params.trigger_mode.value() {
@@ -253,8 +244,8 @@ fn on_note_on (&mut self, note_event: NoteEvent) {
     }
 }
 
-impl ClapPlugin for Clockwork {
-    const CLAP_ID: &'static str = "com.alexanderweichart.clockwork";
+impl ClapPlugin for TinyArp {
+    const CLAP_ID: &'static str = "com.alexanderweichart.tinyarp";
     const CLAP_DESCRIPTION: Option<&'static str> = Some("Simple MIDI note repeater.");
     const CLAP_MANUAL_URL: Option<&'static str> = Some(Self::URL);
     const CLAP_SUPPORT_URL: Option<&'static str> = Some(Self::URL);
@@ -263,7 +254,7 @@ impl ClapPlugin for Clockwork {
     const CLAP_FEATURES: &'static [ClapFeature] = &[ClapFeature::NoteEffect, ClapFeature::Utility];
 }
 
-impl Vst3Plugin for Clockwork {
+impl Vst3Plugin for TinyArp {
     const VST3_CLASS_ID: [u8; 16] = *b"Cl0ckw0rkPlug1nX";
 
     // And don't forget to change these categories, see the docstring on `VST3_CATEGORIES` for more
@@ -271,5 +262,5 @@ impl Vst3Plugin for Clockwork {
     const VST3_CATEGORIES: &'static str = "Instrument|Tools";
 }
 
-nih_export_clap!(Clockwork);
-nih_export_vst3!(Clockwork);
+nih_export_clap!(TinyArp);
+nih_export_vst3!(TinyArp);
