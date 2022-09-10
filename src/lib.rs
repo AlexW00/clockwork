@@ -10,6 +10,7 @@ use nih_plug_egui::{create_egui_editor, EguiState};
 use crate::params::freq_type::{ FrequencyType };
 use crate::params::trigger_mode::{TriggerMode};
 use crate::editor::gui::{ GuiEditor };
+use crate::editor::note_options::NoteOptionsPanelType;
 
 struct TinyArp {
     params: Arc<PluginParams>,

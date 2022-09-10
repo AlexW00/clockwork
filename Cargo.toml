@@ -1,5 +1,5 @@
 [package]
-name = "clockwork"
+name = "tiny-arp"
 version = "0.1.0"
 edition = "2021"
 authors = ["Alexander Weichart <alexanderweichart@icloud.com>"]
