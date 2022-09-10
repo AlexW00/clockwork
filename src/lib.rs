@@ -2,6 +2,7 @@ mod params;
 mod editor;
 
 use std::collections::HashMap;
+use std::fmt::format;
 use nih_plug::prelude::*;
 use std::sync::{Arc};
 use std::sync::atomic::AtomicBool;
@@ -33,6 +34,113 @@ pub struct PluginParams {
     #[id = "trigger-mode"]
     pub trigger_mode: EnumParam<TriggerMode>,
 
+    // Note options (1-16 each)
+
+    #[id = "number-enabled-notes"]
+    pub num_steps: IntParam,
+
+    // Enable
+    #[id = "note-enable-1"]
+    pub enabled_1: BoolParam,
+    #[id = "note-enable-2"]
+    pub enabled_2: BoolParam,
+    #[id = "note-enable-3"]
+    pub enabled_3: BoolParam,
+    #[id = "note-enable-4"]
+    pub enabled_4: BoolParam,
+    #[id = "note-enable-5"]
+    pub enabled_5: BoolParam,
+    #[id = "note-enable-6"]
+    pub enabled_6: BoolParam,
+    #[id = "note-enable-7"]
+    pub enabled_7: BoolParam,
+    #[id = "note-enable-8"]
+    pub enabled_8: BoolParam,
+    #[id = "note-enable-9"]
+    pub enabled_9: BoolParam,
+    #[id = "note-enable-10"]
+    pub enabled_10: BoolParam,
+    #[id = "note-enable-11"]
+    pub enabled_11: BoolParam,
+    #[id = "note-enable-12"]
+    pub enabled_12: BoolParam,
+    #[id = "note-enable-13"]
+    pub enabled_13: BoolParam,
+    #[id = "note-enable-14"]
+    pub enabled_14: BoolParam,
+    #[id = "note-enable-15"]
+    pub enabled_15: BoolParam,
+    #[id = "note-enable-16"]
+    pub enabled_16: BoolParam,
+
+    // Transpose
+    #[id = "transpose-1"]
+    pub transpose_1: IntParam,
+    #[id = "transpose-2"]
+    pub transpose_2: IntParam,
+    #[id = "transpose-3"]
+    pub transpose_3: IntParam,
+    #[id = "transpose-4"]
+    pub transpose_4: IntParam,
+    #[id = "transpose-5"]
+    pub transpose_5: IntParam,
+    #[id = "transpose-6"]
+    pub transpose_6: IntParam,
+    #[id = "transpose-7"]
+    pub transpose_7: IntParam,
+    #[id = "transpose-8"]
+    pub transpose_8: IntParam,
+    #[id = "transpose-9"]
+    pub transpose_9: IntParam,
+    #[id = "transpose-10"]
+    pub transpose_10: IntParam,
+    #[id = "transpose-11"]
+    pub transpose_11: IntParam,
+    #[id = "transpose-12"]
+    pub transpose_12: IntParam,
+    #[id = "transpose-13"]
+    pub transpose_13: IntParam,
+    #[id = "transpose-14"]
+    pub transpose_14: IntParam,
+    #[id = "transpose-15"]
+    pub transpose_15: IntParam,
+    #[id = "transpose-16"]
+    pub transpose_16: IntParam,
+
+    // Velocity
+    #[id = "velocity-1"]
+    pub velocity_1: FloatParam,
+    #[id = "velocity-2"]
+    pub velocity_2: FloatParam,
+    #[id = "velocity-3"]
+    pub velocity_3: FloatParam,
+    #[id = "velocity-4"]
+    pub velocity_4: FloatParam,
+    #[id = "velocity-5"]
+    pub velocity_5: FloatParam,
+    #[id = "velocity-6"]
+    pub velocity_6: FloatParam,
+    #[id = "velocity-7"]
+    pub velocity_7: FloatParam,
+    #[id = "velocity-8"]
+    pub velocity_8: FloatParam,
+    #[id = "velocity-9"]
+    pub velocity_9: FloatParam,
+    #[id = "velocity-10"]
+    pub velocity_10: FloatParam,
+    #[id = "velocity-11"]
+    pub velocity_11: FloatParam,
+    #[id = "velocity-12"]
+    pub velocity_12: FloatParam,
+    #[id = "velocity-13"]
+    pub velocity_13: FloatParam,
+    #[id = "velocity-14"]
+    pub velocity_14: FloatParam,
+    #[id = "velocity-15"]
+    pub velocity_15: FloatParam,
+    #[id = "velocity-16"]
+    pub velocity_16: FloatParam,
+
     #[persist = "editor-state"]
     editor_state: Arc<EguiState>,
 }
@@ -48,6 +156,35 @@ impl Default for TinyArp {
     }
 }
 
+fn make_enabled_param (id: i8) -> BoolParam {
+    BoolParam::new(
+        format!("Enable {}", id),
+        true
+    )
+}
+
+fn make_transpose_param (id: i8) -> IntParam {
+    IntParam::new(
+        format!("Transpose {}", id),
+        0,
+        IntRange::Linear {
+            min: TinyArp::TRANSPOSE_MIN,
+            max: TinyArp::TRANSPOSE_MAX
+        },
+    )
+}
+
+fn make_velocity_param (id: i8) -> FloatParam {
+    FloatParam::new(
+        format!("Velocity {}", id),
+        1.0,
+        FloatRange::Linear { 
+            min: 0.0,
+            max: 1.0
+        },
+    )
+}
+
 impl Default for PluginParams {
     fn default() -> Self {
         Self {
@@ -61,9 +198,7 @@ impl Default for PluginParams {
                     min: 0.0,
                     max: 100.0
                 },
-            )
-            .with_unit(" Hz")
-            .with_value_to_string(formatters::v2s_f32_hz_then_khz(2)),
+            ),
 
             // MS Frequency
             freq_ms: FloatParam::new(
@@ -73,8 +208,7 @@ impl Default for PluginParams {
                     min: 0.0,
                     max: 10000.0
                 },
-            )
-                .with_unit(" ms"),
+            ),
 
             // BPM Frequency
             freq_bpm: FloatParam::new(
@@ -84,8 +218,7 @@ impl Default for PluginParams {
                     min: 0.0,
                     max: 1000.0
                 },
-            )
-                .with_unit(" bpm"),
+            ),
 
             // Frequency Type
             freq_type: EnumParam::new(
@@ -97,6 +230,73 @@ impl Default for PluginParams {
                 "Trigger Mode",
                 TriggerMode::Continue,
             ),
+
+            // Note Options
+
+            num_steps: IntParam::new(
+                "Number of steps",
+                4,
+                IntRange::Linear {
+                    min: 1,
+                    max: 16,
+                },
+            ),
+
+            // Enable 1-16
+
+            enabled_1: make_enabled_param(1),
+            enabled_2: make_enabled_param(2),
+            enabled_3: make_enabled_param(3),
+            enabled_4: make_enabled_param(4),
+            enabled_5: make_enabled_param(5),
+            enabled_6: make_enabled_param(6),
+            enabled_7: make_enabled_param(7),
+            enabled_8: make_enabled_param(8),
+            enabled_9: make_enabled_param(9),
+            enabled_10: make_enabled_param(10),
+            enabled_11: make_enabled_param(11),
+            enabled_12: make_enabled_param(12),
+            enabled_13: make_enabled_param(13),
+            enabled_14: make_enabled_param(14),
+            enabled_15: make_enabled_param(15),
+            enabled_16: make_enabled_param(16),
+
+
+            // Transpose 1-16
+            transpose_1: make_transpose_param(1),
+            transpose_2: make_transpose_param(2),
+            transpose_3: make_transpose_param(3),
+            transpose_4: make_transpose_param(4),
+            transpose_5: make_transpose_param(5),
+            transpose_6: make_transpose_param(6),
+            transpose_7: make_transpose_param(7),
+            transpose_8: make_transpose_param(8),
+            transpose_9: make_transpose_param(9),
+            transpose_10: make_transpose_param(10),
+            transpose_11: make_transpose_param(11),
+            transpose_12: make_transpose_param(12),
+            transpose_13: make_transpose_param(13),
+            transpose_14: make_transpose_param(14),
+            transpose_15: make_transpose_param(15),
+            transpose_16: make_transpose_param(16),
+
+            // Velocity 1-16
+            velocity_1: make_velocity_param(1),
+            velocity_2: make_velocity_param(2),
+            velocity_3: make_velocity_param(3),
+            velocity_4: make_velocity_param(4),
+            velocity_5: make_velocity_param(5),
+            velocity_6: make_velocity_param(6),
+            velocity_7: make_velocity_param(7),
+            velocity_8: make_velocity_param(8),
+            velocity_9: make_velocity_param(9),
+            velocity_10: make_velocity_param(10),
+            velocity_11: make_velocity_param(11),
+            velocity_12: make_velocity_param(12),
+            velocity_13: make_velocity_param(13),
+            velocity_14: make_velocity_param(14),
+            velocity_15: make_velocity_param(15),
+            velocity_16: make_velocity_param(16),
         }
     }
 }
@@ -170,21 +370,23 @@ impl Plugin for TinyArp {
 }
 
 impl TinyArp {
+    const TRANSPOSE_MIN: i32 = -24;
+    const TRANSPOSE_MAX: i32 = 24;
 
-fn on_note_on (&mut self, note_event: NoteEvent) {
-    match self.params.trigger_mode.value() {
-        TriggerMode::ReTrigger => {
-            self.last_note_on_send = SystemTime::UNIX_EPOCH;
+    fn on_note_on (&mut self, note_event: NoteEvent) {
+        match self.params.trigger_mode.value() {
+            TriggerMode::ReTrigger => {
+                self.last_note_on_send = SystemTime::UNIX_EPOCH;
+            }
+            TriggerMode::ReTriggerDelayed=> {
+                self.last_note_on_send = SystemTime::now();
+            }
+            _ => (),
         }
-        TriggerMode::ReTriggerDelayed=> {
-            self.last_note_on_send = SystemTime::now();
+        if let NoteEvent::NoteOn {note, ..} = note_event {
+            self.active_notes.insert(note, note_event);
         }
-        _ => (),
     }
-    if let NoteEvent::NoteOn {note, ..} = note_event {
-        self.active_notes.insert(note, note_event);
-    }
-}
 
     fn on_note_off (&mut self, note_event: NoteEvent) {
         if let NoteEvent::NoteOff {note, ..} = note_event {

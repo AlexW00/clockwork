@@ -25,7 +25,7 @@ pub trait GuiEditor {
 
 impl GuiEditor for TinyArp {
     const WINDOW_WIDTH: u32 = 600;
-    const WINDOW_HEIGHT: u32 = 200;
+    const WINDOW_HEIGHT: u32 = 700;
 
     fn draw_ui(ctx: &Context, setter: &ParamSetter, params: &Arc<PluginParams>, is_typing: &Arc<AtomicBool>) {
         egui::CentralPanel::default()
@@ -43,7 +43,7 @@ impl GuiEditor for TinyArp {
                             frequency_category(ui, setter, params, is_typing);
                         });
 
-                    egui::CollapsingHeader::new("Pattern")
+                    egui::CollapsingHeader::new("Notes")
                         .default_open(true)
                         .show(ui, |ui| {
                             ui.add(NoteOptions {
