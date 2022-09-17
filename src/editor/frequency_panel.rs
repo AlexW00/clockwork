@@ -1,6 +1,6 @@
 use crate::{FrequencyType, GuiEditor, PluginParams, TinyArp};
 use nih_plug::context::ParamSetter;
-use nih_plug::prelude::EnumParam;
+use nih_plug::prelude::{EnumParam, IntParam, Param};
 use nih_plug_egui::egui::{Layout, Response, Ui, Widget};
 use nih_plug_egui::{egui, widgets};
 use std::sync::Arc;
@@ -57,6 +57,30 @@ impl<'a> Widget for FrequencyPanel<'a> {
                         ui,
                     );
                     Self::add_nav_item(&self.params.freq_type, self.setter, FrequencyType::Bpm, ui);
+
+                    ui.add_space(ui.available_width() - 16.0);
+                    ui.add(ResetButton::<IntParam>::new(
+                        self.setter,
+                        None,
+                        Some(Box::new(|| {
+                            self.setter.set_parameter(
+                                &self.params.freq_bpm,
+                                self.params.freq_bpm.default_plain_value(),
+                            );
+                            self.setter.set_parameter(
+                                &self.params.freq_hz,
+                                self.params.freq_hz.default_plain_value(),
+                            );
+                            self.setter.set_parameter(
+                                &self.params.freq_ms,
+                                self.params.freq_ms.default_plain_value(),
+                            );
+                            self.setter.set_parameter(
+                                &self.params.freq_type,
+                                self.params.freq_type.default_plain_value(),
+                            )
+                        })),
+                    ));
                 });
 
                 ui.separator();
@@ -71,7 +95,7 @@ impl<'a> Widget for FrequencyPanel<'a> {
 
                     // TODO: make dynamic
                     ui.add_space(ui.available_width() - 16.0);
-                    ui.add(ResetButton::new(self.setter, Some(vec![freq_param]), None));
+                    ui.add(ResetButton::new(self.setter, Some(vec![freq_param]), None))
                 });
             });
         })

@@ -72,10 +72,10 @@ impl<'a> Widget for NoteOptions<'a> {
                         ui,
                         note_options_panel,
                     );
-                    // TODO: Make this dynamic
-                    let space_size = ui.available_width();
-                    ui.add_space(space_size);
 
+                    let space_size = ui.available_width() - 40.0;
+                    ui.add_space(space_size);
+                    // TODO: Make this dynamic
                     ui.with_layout(Layout::right_to_left(), |ui| {
                         ui.add(ResetButton::new(
                             self.setter,

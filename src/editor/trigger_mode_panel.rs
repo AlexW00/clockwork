@@ -5,6 +5,8 @@ use nih_plug::prelude::EnumParam;
 use nih_plug_egui::egui::{self, Layout, Response, Ui};
 use std::sync::Arc;
 
+use super::atomics::reset_button::ResetButton;
+
 pub struct TriggerModePanel<'a> {
     pub setter: &'a ParamSetter<'a>,
     pub params: &'a Arc<PluginParams>,
@@ -56,6 +58,13 @@ impl<'a> egui::Widget for TriggerModePanel<'a> {
                         TriggerMode::ReTriggerDelayed,
                         ui,
                     );
+
+                    ui.add_space(ui.available_width() - 16.0);
+                    ui.add(ResetButton::new(
+                        self.setter,
+                        Some(vec![&self.params.trigger_mode]),
+                        None,
+                    ))
                 });
 
                 ui.separator();

@@ -72,7 +72,10 @@ impl<'a> NoteOptionsSliderPane<'a> {
 
             // TODO: Make dynamic
             ui.add_space(ui.available_width() - 16.0);
-            ui.add(ResetButton::new(self.setter, Some(vec![param]), None));
+            ui.add_enabled(
+                enabled_param.value(),
+                ResetButton::new(self.setter, Some(vec![param]), None),
+            );
         });
     }
 

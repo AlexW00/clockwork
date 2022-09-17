@@ -20,7 +20,7 @@ pub trait GuiEditor {
 
 impl GuiEditor for TinyArp {
     const WINDOW_WIDTH: u32 = 600;
-    const WINDOW_HEIGHT: u32 = 700;
+    const WINDOW_HEIGHT: u32 = 617;
 
     fn draw_ui(ctx: &Context, setter: &ParamSetter, params: &Arc<PluginParams>) {
         egui::CentralPanel::default().show(ctx, |ui| {
