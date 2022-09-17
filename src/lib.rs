@@ -1,24 +1,20 @@
-mod params;
 mod editor;
+mod params;
 
-use std::collections::HashMap;
-use std::fmt::format;
-use nih_plug::prelude::*;
-use std::sync::{Arc};
-use std::sync::atomic::AtomicBool;
-use std::time::SystemTime;
-use nih_plug_egui::{create_egui_editor, EguiState};
-use crate::params::freq_type::{ FrequencyType };
-use crate::params::trigger_mode::{TriggerMode};
-use crate::editor::gui::{ GuiEditor };
+use crate::editor::gui::GuiEditor;
 use crate::editor::note_options::NoteOptionsPanelType;
+use crate::params::freq_type::FrequencyType;
+use crate::params::trigger_mode::TriggerMode;
+use nih_plug::prelude::*;
+use nih_plug_egui::{create_egui_editor, EguiState};
+use std::collections::HashMap;
+use std::sync::Arc;
+use std::time::SystemTime;
 
 struct TinyArp {
     params: Arc<PluginParams>,
     active_notes: HashMap<u8, NoteEvent>,
     last_note_on_send: SystemTime,
-
-    is_typing: Arc<AtomicBool>,
 }
 
 #[derive(Params)]
@@ -35,7 +31,6 @@ pub struct PluginParams {
     pub trigger_mode: EnumParam<TriggerMode>,
 
     // Note options (1-16 each)
-
     #[id = "number-enabled-notes"]
     pub num_steps: IntParam,
 
@@ -151,38 +146,32 @@ impl Default for TinyArp {
             params: Arc::new(PluginParams::default()),
             active_notes: HashMap::new(),
             last_note_on_send: SystemTime::UNIX_EPOCH,
-            is_typing: Arc::new(AtomicBool::new(false)),
         }
     }
 }
 
-fn make_enabled_param (id: i8) -> BoolParam {
-    BoolParam::new(
-        format!("Enable {}", id),
-        true
-    )
+fn make_enabled_param(id: i8) -> BoolParam {
+    BoolParam::new(format!("Enable {}", id), true)
 }
 
-fn make_transpose_param (id: i8) -> IntParam {
+fn make_transpose_param(id: i8) -> IntParam {
     IntParam::new(
         format!("Transpose {}", id),
         0,
         IntRange::Linear {
             min: TinyArp::TRANSPOSE_MIN,
-            max: TinyArp::TRANSPOSE_MAX
+            max: TinyArp::TRANSPOSE_MAX,
         },
     )
 }
 
-fn make_velocity_param (id: i8) -> FloatParam {
+fn make_velocity_param(id: i8) -> FloatParam {
     FloatParam::new(
         format!("Velocity {}", id),
         1.0,
-        FloatRange::Linear { 
-            min: 0.0,
-            max: 1.0
-        },
+        FloatRange::Linear { min: 0.0, max: 1.0 },
     )
+    .with_step_size(0.01)
 }
 
 impl Default for PluginParams {
@@ -196,9 +185,10 @@ impl Default for PluginParams {
                 1.0,
                 FloatRange::Linear {
                     min: 0.0,
-                    max: 100.0
+                    max: 100.0,
                 },
-            ),
+            )
+            .with_step_size(0.1),
 
             // MS Frequency
             freq_ms: FloatParam::new(
@@ -206,9 +196,10 @@ impl Default for PluginParams {
                 1000.0,
                 FloatRange::Linear {
                     min: 0.0,
-                    max: 10000.0
+                    max: 10000.0,
                 },
-            ),
+            )
+            .with_step_size(1.0),
 
             // BPM Frequency
             freq_bpm: FloatParam::new(
@@ -216,34 +207,20 @@ impl Default for PluginParams {
                 175.0,
                 FloatRange::Linear {
                     min: 0.0,
-                    max: 1000.0
+                    max: 1000.0,
                 },
-            ),
+            )
+            .with_step_size(1.0),
 
             // Frequency Type
-            freq_type: EnumParam::new(
-                "Frequency Type",
-                FrequencyType::Hertz,
-            ),
+            freq_type: EnumParam::new("Frequency Type", FrequencyType::Hertz),
             // Trigger Mode
-            trigger_mode: EnumParam::new(
-                "Trigger Mode",
-                TriggerMode::Continue,
-            ),
+            trigger_mode: EnumParam::new("Trigger Mode", TriggerMode::Continue),
 
             // Note Options
-
-            num_steps: IntParam::new(
-                "Number of steps",
-                4,
-                IntRange::Linear {
-                    min: 1,
-                    max: 16,
-                },
-            ),
+            num_steps: IntParam::new("Number of steps", 4, IntRange::Linear { min: 1, max: 16 }),
 
             // Enable 1-16
-
             enabled_1: make_enabled_param(1),
             enabled_2: make_enabled_param(2),
             enabled_3: make_enabled_param(3),
@@ -260,7 +237,6 @@ impl Default for PluginParams {
             enabled_14: make_enabled_param(14),
             enabled_15: make_enabled_param(15),
             enabled_16: make_enabled_param(16),
-
 
             // Transpose 1-16
             transpose_1: make_transpose_param(1),
@@ -326,13 +302,13 @@ impl Plugin for TinyArp {
 
     fn editor(&self) -> Option<Box<dyn Editor>> {
         let params = self.params.clone();
-        let is_typing = self.is_typing.clone();
+
         create_egui_editor(
             self.params.editor_state.clone(),
             (),
             move |egui_ctx, setter, _state| {
-                TinyArp::draw_ui(egui_ctx, setter, &params, &is_typing);
-            }
+                TinyArp::draw_ui(egui_ctx, setter, &params);
+            },
         )
     }
 
@@ -373,36 +349,36 @@ impl TinyArp {
     const TRANSPOSE_MIN: i32 = -24;
     const TRANSPOSE_MAX: i32 = 24;
 
-    fn on_note_on (&mut self, note_event: NoteEvent) {
+    fn on_note_on(&mut self, note_event: NoteEvent) {
         match self.params.trigger_mode.value() {
             TriggerMode::ReTrigger => {
                 self.last_note_on_send = SystemTime::UNIX_EPOCH;
             }
-            TriggerMode::ReTriggerDelayed=> {
+            TriggerMode::ReTriggerDelayed => {
                 self.last_note_on_send = SystemTime::now();
             }
             _ => (),
         }
-        if let NoteEvent::NoteOn {note, ..} = note_event {
+        if let NoteEvent::NoteOn { note, .. } = note_event {
             self.active_notes.insert(note, note_event);
         }
     }
 
-    fn on_note_off (&mut self, note_event: NoteEvent) {
-        if let NoteEvent::NoteOff {note, ..} = note_event {
+    fn on_note_off(&mut self, note_event: NoteEvent) {
+        if let NoteEvent::NoteOff { note, .. } = note_event {
             if self.active_notes.contains_key(&note) {
                 self.active_notes.remove(&note);
             }
         }
     }
 
-    fn on_midi_send_opportunity (&mut self, context: &mut impl ProcessContext) {
+    fn on_midi_send_opportunity(&mut self, context: &mut impl ProcessContext) {
         if self.do_send_midi() {
             self.send_midi(context);
         }
     }
 
-    fn send_midi (&mut self, context: &mut impl ProcessContext) {
+    fn send_midi(&mut self, context: &mut impl ProcessContext) {
         let mut note_events_to_remove = Vec::<u8>::new();
         let mut did_send_note_on = false;
         for note_event in self.active_notes.values() {
@@ -419,18 +395,22 @@ impl TinyArp {
             self.active_notes.remove(&note);
         }
 
-        if did_send_note_on {self.last_note_on_send = SystemTime::now()};
+        if did_send_note_on {
+            self.last_note_on_send = SystemTime::now()
+        };
     }
 
-    fn do_send_midi (&self) -> bool {
+    fn do_send_midi(&self) -> bool {
         match self.params.freq_type.value() {
-            FrequencyType::Milliseconds => self.ms_since_last_midi_send() as f32 > self.params.freq_ms.value,
-            FrequencyType::Hertz  => {
-                let ms = 1000.0 / self.params.freq_hz.value;
+            FrequencyType::Milliseconds => {
+                self.ms_since_last_midi_send() as f32 > self.params.freq_ms.value()
+            }
+            FrequencyType::Hertz => {
+                let ms = 1000.0 / self.params.freq_hz.value();
                 self.ms_since_last_midi_send() as f32 > ms
             }
             FrequencyType::Bpm => {
-                let ms = 60000.0 / self.params.freq_bpm.value;
+                let ms = 60000.0 / self.params.freq_bpm.value();
                 self.ms_since_last_midi_send() as f32 > ms
             }
         }
@@ -444,6 +424,69 @@ impl TinyArp {
         } else {
             0
         }
+    }
+
+    fn get_transpose_params<'a>(params: &'a Arc<PluginParams>) -> Vec<&IntParam> {
+        vec![
+            &params.transpose_1,
+            &params.transpose_2,
+            &params.transpose_3,
+            &params.transpose_4,
+            &params.transpose_5,
+            &params.transpose_6,
+            &params.transpose_7,
+            &params.transpose_8,
+            &params.transpose_9,
+            &params.transpose_10,
+            &params.transpose_11,
+            &params.transpose_12,
+            &params.transpose_13,
+            &params.transpose_14,
+            &params.transpose_15,
+            &params.transpose_16,
+        ]
+    }
+
+    fn get_velocity_params<'a>(params: &'a Arc<PluginParams>) -> Vec<&FloatParam> {
+        vec![
+            &params.velocity_1,
+            &params.velocity_2,
+            &params.velocity_3,
+            &params.velocity_4,
+            &params.velocity_5,
+            &params.velocity_6,
+            &params.velocity_7,
+            &params.velocity_8,
+            &params.velocity_9,
+            &params.velocity_10,
+            &params.velocity_11,
+            &params.velocity_12,
+            &params.velocity_13,
+            &params.velocity_14,
+            &params.velocity_15,
+            &params.velocity_16,
+        ]
+    }
+
+    fn get_enabled_params<'a>(params: &'a Arc<PluginParams>) -> Vec<&BoolParam> {
+        vec![
+            &params.enabled_1,
+            &params.enabled_2,
+            &params.enabled_3,
+            &params.enabled_4,
+            &params.enabled_5,
+            &params.enabled_6,
+            &params.enabled_7,
+            &params.enabled_8,
+            &params.enabled_9,
+            &params.enabled_10,
+            &params.enabled_11,
+            &params.enabled_12,
+            &params.enabled_13,
+            &params.enabled_14,
+            &params.enabled_15,
+            &params.enabled_16,
+        ]
     }
 }
 

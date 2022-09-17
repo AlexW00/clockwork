@@ -1,2 +1,4 @@
+# .cargo/config
+
 [alias]
 xtask = "run --package xtask --release --"

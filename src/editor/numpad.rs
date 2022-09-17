@@ -15,7 +15,7 @@ pub struct Numpad<'a> {
 impl <'a> Numpad<'a> {
 
     fn on_key(&self, key: NumpadKey) {
-        let mut value = self.param_to_edit.value;
+        let mut value = self.param_to_edit.value();
         match key {
             NumpadKey::Number(n) => {
                 value = value * 10.0 + n as f32;
