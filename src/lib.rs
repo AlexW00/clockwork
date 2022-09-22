@@ -14,7 +14,8 @@ use std::time::SystemTime;
 struct TinyArp {
     params: Arc<PluginParams>,
     active_notes: HashMap<u8, NoteEvent>,
-    last_note_on_send: SystemTime,
+    last_note_timestamp: SystemTime,
+    next_step_index: usize,
 }
 
 #[derive(Params)]
@@ -145,7 +146,8 @@ impl Default for TinyArp {
         Self {
             params: Arc::new(PluginParams::default()),
             active_notes: HashMap::new(),
-            last_note_on_send: SystemTime::UNIX_EPOCH,
+            last_note_timestamp: SystemTime::UNIX_EPOCH,
+            next_step_index: 0,
         }
     }
 }
@@ -352,10 +354,10 @@ impl TinyArp {
     fn on_note_on(&mut self, note_event: NoteEvent) {
         match self.params.trigger_mode.value() {
             TriggerMode::ReTrigger => {
-                self.last_note_on_send = SystemTime::UNIX_EPOCH;
+                self.last_note_timestamp = SystemTime::UNIX_EPOCH;
             }
             TriggerMode::ReTriggerDelayed => {
-                self.last_note_on_send = SystemTime::now();
+                self.last_note_timestamp = SystemTime::now();
             }
             _ => (),
         }
@@ -378,13 +380,101 @@ impl TinyArp {
         }
     }
 
+    fn is_note_enabled(&self, index: usize) -> bool {
+        let params = &self.params;
+        let enabled_params = TinyArp::get_enabled_params(params);
+        let _is_enabled_param = enabled_params.get(index);
+        if let Some(is_enabled_param) = _is_enabled_param {
+            return is_enabled_param.value();
+        }
+        false
+    }
+
+    fn get_index(&mut self, recursion_index: usize) -> Option<usize> {
+        let max_steps = self.params.num_steps.value() as usize;
+        if max_steps - 1 <= recursion_index {
+            return None;
+        }
+        let current_step_index = self.next_step();
+
+        if !self.is_note_enabled(current_step_index) {
+            return self.get_index(recursion_index + 1);
+        }
+
+        Some(current_step_index)
+    }
+
+    fn next_step(&mut self) -> usize {
+        let max_steps = self.params.num_steps.value() as usize;
+        let current_step_index = self.next_step_index;
+        if self.next_step_index >= max_steps - 1 {
+            self.next_step_index = 0;
+        } else {
+            self.next_step_index += 1;
+        }
+        current_step_index
+    }
+
+    fn get_next_note_event(&mut self, note_event: &NoteEvent) -> Option<NoteEvent> {
+        let _step_index = self.get_index(0);
+        if let Some(step_index) = _step_index {
+            if let Some(mut midi_data) = note_event.as_midi() {
+                let timing = note_event.timing();
+
+                self.apply_transpose_modulation(&mut midi_data, step_index);
+                self.apply_velocity_modulation(&mut midi_data, step_index);
+
+                return NoteEvent::from_midi(timing, midi_data).ok();
+            }
+        } else {
+            return None;
+        }
+        Some(note_event.clone())
+    }
+
+    fn apply_transpose_modulation(&mut self, midi_data: &mut [u8], index: usize) {
+        if let Some(transpose_param) = self.get_transpose_param_by_index(index) {
+            let new_note = midi_data[1] as i32 + transpose_param.value();
+            midi_data[1] = new_note as u8;
+        }
+    }
+
+    fn get_transpose_param_by_index(&self, index: usize) -> Option<&IntParam> {
+        let params = &self.params;
+        let transpose_params = TinyArp::get_transpose_params(params);
+        match transpose_params.get(index) {
+            Some(transpose_param) => Some(transpose_param),
+            None => None,
+        }
+    }
+
+    fn apply_velocity_modulation(&self, midi_data: &mut [u8; 3], step_index: usize) {
+        if let Some(velocity) = self.get_velocity_param_by_index(step_index) {
+            let new_velocity = midi_data[2] as f32 + velocity.value();
+            midi_data[2] = new_velocity as u8;
+        }
+    }
+
+    fn get_velocity_param_by_index(&self, index: usize) -> Option<&FloatParam> {
+        let params = &self.params;
+        let velocity_params = TinyArp::get_velocity_params(params);
+        match velocity_params.get(index) {
+            Some(velocity_param) => Some(velocity_param),
+            None => None,
+        }
+    }
+
     fn send_midi(&mut self, context: &mut impl ProcessContext) {
         let mut note_events_to_remove = Vec::<u8>::new();
         let mut did_send_note_on = false;
-        for note_event in self.active_notes.values() {
+
+        for note_event in self.active_notes.clone().values() {
             if let NoteEvent::NoteOn { .. } = note_event {
-                context.send_event(note_event.clone());
-                did_send_note_on = true;
+                let _next_note_event = self.get_next_note_event(note_event);
+                if let Some(next_note_event) = _next_note_event {
+                    context.send_event(next_note_event);
+                    did_send_note_on = true;
+                }
             }
             if let NoteEvent::NoteOff { note, .. } = note_event {
                 context.send_event(note_event.clone());
@@ -396,7 +486,7 @@ impl TinyArp {
         }
 
         if did_send_note_on {
-            self.last_note_on_send = SystemTime::now()
+            self.last_note_timestamp = SystemTime::now()
         };
     }
 
@@ -418,7 +508,7 @@ impl TinyArp {
 
     fn ms_since_last_midi_send(&self) -> u64 {
         let now = SystemTime::now();
-        let dur = now.duration_since(self.last_note_on_send);
+        let dur = now.duration_since(self.last_note_timestamp);
         if let Ok(dur) = dur {
             dur.as_millis() as u64
         } else {
